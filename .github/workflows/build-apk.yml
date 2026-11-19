@@ -1,0 +1,143 @@
+name: Build & Release Android APK
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Alinkvault APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Gradle 8.5
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.5'
+
+      - name: Tentukan versi
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "ALINKVAULT_VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          else
+            echo "ALINKVAULT_VERSION_NAME=1.0.0" >> "$GITHUB_ENV"
+          fi
+          echo "ALINKVAULT_VERSION_CODE=${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+
+      - name: Siapkan keystore rilis
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ALINKVAULT_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ALINKVAULT_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ALINKVAULT_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ALINKVAULT_KEY_PASSWORD }}
+        run: |
+          mkdir -p android/keystore
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > android/keystore/release.jks
+            test -s android/keystore/release.jks
+            echo "ALINKVAULT_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "ALINKVAULT_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "ALINKVAULT_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+            echo "Memakai keystore rilis dari GitHub Secrets."
+          else
+            echo "::warning::Secret ALINKVAULT_KEYSTORE_BASE64 belum diatur. APK ditandatangani dengan kunci sementara."
+            echo "::warning::Untuk pembaruan yang stabil, atur keystore lewat Secrets (lihat README)."
+            keytool -genkeypair \
+              -keystore android/keystore/release.jks \
+              -alias alinkvault \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass alinkvault-ci -keypass alinkvault-ci \
+              -dname "CN=Alinkvault, OU=Personal, O=Alinkvault, L=Jakarta, C=ID" >/dev/null 2>&1
+            echo "ALINKVAULT_KEYSTORE_PASSWORD=alinkvault-ci" >> "$GITHUB_ENV"
+            echo "ALINKVAULT_KEY_ALIAS=alinkvault" >> "$GITHUB_ENV"
+            echo "ALINKVAULT_KEY_PASSWORD=alinkvault-ci" >> "$GITHUB_ENV"
+          fi
+          echo "ALINKVAULT_KEYSTORE_PATH=keystore/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build APK rilis
+        shell: bash
+        run: |
+          cd android
+          gradle assembleRelease --no-daemon
+          cd ..
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk dist/Alinkvault.apk
+          test -s dist/Alinkvault.apk
+          ls -lh dist/Alinkvault.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Alinkvault-APK
+          path: dist/Alinkvault.apk
+          if-no-files-found: error
+
+      - name: Publikasikan build terbaru
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: latest-build
+          name: "Alinkvault — build terbaru"
+          draft: false
+          prerelease: false
+          make_latest: true
+          files: dist/Alinkvault.apk
+          body: |
+            ## 📱 Alinkvault — build terbaru
+
+            Vault tautan pribadi bertema **glassmorphism**. Offline, tanpa akun, tanpa server.
+
+            ### ⬇️ Download APK
+            - **[Alinkvault.apk](https://github.com/${{ github.repository }}/releases/download/latest-build/Alinkvault.apk)**
+
+            Build otomatis dari commit `${{ github.sha }}` pada cabang `main`.
+
+      - name: Publikasikan rilis versi
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ github.ref_name }}
+          name: "Alinkvault ${{ github.ref_name }}"
+          draft: false
+          prerelease: false
+          make_latest: true
+          files: dist/Alinkvault.apk
+          body: |
+            ## 📱 Alinkvault ${{ github.ref_name }}
+
+            Vault tautan pribadi dengan tema **glassmorphism**: simpan, rapikan, dan temukan tautan favoritmu dalam satu tempat. Offline, tanpa akun, tanpa pelacakan.
+
+            ### ⬇️ Download APK
+            - **[Alinkvault.apk](https://github.com/${{ github.repository }}/releases/latest/download/Alinkvault.apk)**
+
+            ### ✨ Fitur
+            - 🧊 Antarmuka kaca (glassmorphism) dengan aurora lembut, tema gelap/terang/auto.
+            - 🔗 Simpan judul, catatan, koleksi, tag, dan favorit untuk setiap tautan.
+            - 🔎 Pencarian instan, filter koleksi, dan empat mode urutan.
+            - 📚 Halaman koleksi untuk merapikan tautan sesuai konteks.
+            - 💾 Cadangan JSON (ekspor/impor) dan penyimpanan 100% lokal.
+            - 📱 APK WebView ringan, offline-first, tanpa iklan dan tanpa akun.
+
+            ### 🚀 Cara pasang
+            1. Unduh **`Alinkvault.apk`**.
+            2. Buka berkasnya di HP Android.
+            3. Jika diminta, izinkan **Instal aplikasi dari sumber ini**.
+            4. Tekan **Instal**, lalu buka Alinkvault.

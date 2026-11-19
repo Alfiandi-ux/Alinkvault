@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Alinkvault — vault tautan pribadi bertema glassmorphism. Simpan, rapikan, dan temukan tautan favoritmu. Offline, tanpa akun.">
+<meta name="theme-color" content="#070a16" id="meta-theme">
+<meta name="color-scheme" content="dark light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Alinkvault">
+<title>Alinkvault — Vault Tautan Pribadi</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="assets/styles.css">
+<script>
+  // Terapkan tema sebelum render agar tidak berkedip.
+  try {
+    var raw = localStorage.getItem('alinkvault.v1');
+    var theme = raw ? (JSON.parse(raw).settings || {}).theme : 'auto';
+    theme = theme || 'auto';
+    var dark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  } catch (e) { document.documentElement.dataset.theme = 'dark'; }
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Lewati ke konten</a>
+
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-logo" viewBox="0 0 24 24"><path d="M9.5 14.5 14.5 9.5"/><path d="M11 7.6 12.6 6a4 4 0 0 1 5.7 5.7l-1.6 1.5"/><path d="M13 16.4 11.4 18a4 4 0 1 1-5.7-5.7l1.6-1.5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.7-4.7"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.6 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.8l5.9-.9z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M9.5 14.5 14.5 9.5"/><path d="M11 7.6 12.6 6a4 4 0 0 1 5.7 5.7l-1.6 1.5"/><path d="M13 16.4 11.4 18a4 4 0 1 1-5.7-5.7l1.6-1.5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M15 5.5A2.5 2.5 0 0 0 12.5 3H5.5A2.5 2.5 0 0 0 3 5.5v7A2.5 2.5 0 0 0 5.5 15"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19.5 8.5l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3"/><path d="M6 7l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-open" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4v-.2a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 14.2A8.7 8.7 0 0 1 9.8 3.5 8.7 8.7 0 1 0 20.5 14.2z"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l9 9-8 8z"/><circle cx="7.5" cy="7.5" r="1.2"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2h6.5A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.4l3.4 2"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 21h16"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 21h16"/></symbol>
+  <symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4.5V3h6v1.5"/><path d="M9 10h6M9 14h4"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9 3l1.3 3.7L14 8l-3.7 1.3L9 13l-1.3-3.7L4 8l3.7-1.3z"/><path d="M18 12l1 3 3 1-3 1-1 3-1-3-3-1 3-1z"/><path d="M17 3v3M15.5 4.5h3"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M4 12h16M14 6l6 6-6 6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5L16 9.5"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4z"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M4 9h10a6 6 0 0 1 0 12h-3"/><path d="M8 5 4 9l4 4"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+</svg>
+
+<div class="bg" aria-hidden="true">
+  <span class="orb orb--violet"></span>
+  <span class="orb orb--cyan"></span>
+  <span class="orb orb--pink"></span>
+  <span class="bg__grid"></span>
+</div>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="app">
+  <aside class="rail glass" aria-label="Navigasi utama">
+    <a class="brand" href="#/semua" data-nav="all">
+      <span class="brand__mark"><svg class="icon" aria-hidden="true"><use href="#i-logo"/></svg></span>
+      <span class="brand__text">Alinkvault<small>vault tautan</small></span>
+    </a>
+
+    <nav class="nav">
+      <p class="nav__label">Menu</p>
+      <button class="nav__item" type="button" data-view="all">
+        <svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg>
+        <span>Semua tautan</span><em id="count-all">0</em>
+      </button>
+      <button class="nav__item" type="button" data-view="favorites">
+        <svg class="icon" aria-hidden="true"><use href="#i-star"/></svg>
+        <span>Favorit</span><em id="count-favorites">0</em>
+      </button>
+      <button class="nav__item" type="button" data-view="collections">
+        <svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg>
+        <span>Koleksi</span><em id="count-collections">0</em>
+      </button>
+    </nav>
+
+    <div class="rail__section">
+      <p class="nav__label">Koleksi cepat</p>
+      <div class="rail__tags" id="rail-collections"></div>
+    </div>
+
+    <div class="rail__footer">
+      <div class="vault-card">
+        <div class="vault-card__top">
+          <svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>
+          <span>Tersimpan lokal</span>
+        </div>
+        <p><strong id="vault-count">0</strong> tautan di perangkat ini. Tidak ada akun, tidak ada server.</p>
+      </div>
+      <button class="icon-btn icon-btn--glass" type="button" id="rail-settings" aria-label="Buka pengaturan">
+        <svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <header class="topbar">
+      <div class="topbar__titles">
+        <p class="eyebrow" id="view-eyebrow">Ruang kerja</p>
+        <h1 id="view-title">Semua tautan</h1>
+        <p class="sub" id="view-sub">Semua tautan yang kamu simpan, rapi di satu tempat.</p>
+      </div>
+      <div class="topbar__tools">
+        <label class="search" for="search">
+          <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+          <input id="search" type="search" placeholder="Cari judul, domain, tag…" autocomplete="off" spellcheck="false" aria-label="Cari tautan">
+          <kbd aria-hidden="true">/</kbd>
+          <button class="search__clear" type="button" id="search-clear" aria-label="Hapus pencarian" hidden>
+            <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+          </button>
+        </label>
+        <button class="btn btn--primary topbar__add" type="button" id="add-link">
+          <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg><span>Simpan tautan</span>
+        </button>
+        <button class="icon-btn icon-btn--glass" type="button" id="theme-toggle" aria-label="Ganti tema" title="Ganti tema">
+          <svg class="icon icon--sun" aria-hidden="true"><use href="#i-sun"/></svg>
+          <svg class="icon icon--moon" aria-hidden="true"><use href="#i-moon"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="stats" id="stats" aria-label="Ringkasan vault"></section>
+
+    <section class="toolbar" id="toolbar">
+      <div class="chips" id="chips" role="group" aria-label="Filter koleksi"></div>
+      <div class="toolbar__right">
+        <span class="result-count" id="result-count"></span>
+        <label class="select" for="sort">
+          <span class="sr-only">Urutkan</span>
+          <select id="sort">
+            <option value="newest">Terbaru</option>
+            <option value="oldest">Terlama</option>
+            <option value="az">Judul A–Z</option>
+            <option value="favorites">Favorit dulu</option>
+          </select>
+          <svg class="icon select__chevron" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+        </label>
+      </div>
+    </section>
+
+    <section class="grid" id="grid" aria-live="polite" aria-label="Daftar tautan"></section>
+
+    <section class="collections-view" id="collections-view" hidden aria-label="Daftar koleksi"></section>
+
+    <section class="empty glass" id="empty" hidden>
+      <div class="empty__art" aria-hidden="true">
+        <span class="empty__ring"></span>
+        <svg class="icon"><use href="#i-inbox"/></svg>
+      </div>
+      <h2 id="empty-title">Vault-mu masih kosong</h2>
+      <p id="empty-sub">Simpan tautan pertama, lalu rapikan dengan koleksi dan tag. Semua tersimpan di perangkatmu.</p>
+      <div class="empty__actions">
+        <button class="btn btn--primary" type="button" id="empty-add">
+          <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Simpan tautan
+        </button>
+        <button class="btn btn--ghost" type="button" id="empty-sample">
+          <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>Muat contoh
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar glass" aria-label="Navigasi bawah">
+    <button class="tab" type="button" data-view="all">
+      <svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg><span>Semua</span>
+    </button>
+    <button class="tab" type="button" data-view="favorites">
+      <svg class="icon" aria-hidden="true"><use href="#i-star"/></svg><span>Favorit</span>
+    </button>
+    <button class="tab" type="button" data-view="collections">
+      <svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg><span>Koleksi</span>
+    </button>
+    <button class="tab" type="button" id="tab-settings">
+      <svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg><span>Setelan</span>
+    </button>
+  </nav>
+
+  <button class="fab" type="button" id="fab" aria-label="Simpan tautan baru">
+    <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+  </button>
+</div>
+
+<!-- Editor tautan -->
+<div class="modal" id="link-modal" hidden>
+  <div class="modal__backdrop" data-close="link-modal"></div>
+  <form class="sheet" id="link-form" role="dialog" aria-modal="true" aria-labelledby="link-modal-title" novalidate>
+    <header class="sheet__head">
+      <div>
+        <p class="eyebrow" id="link-modal-eyebrow">Tautan baru</p>
+        <h2 id="link-modal-title">Simpan tautan</h2>
+      </div>
+      <button class="icon-btn" type="button" data-close="link-modal" aria-label="Tutup">
+        <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </header>
+
+    <div class="sheet__body">
+      <div class="field">
+        <label for="f-url">URL <span class="req">*</span></label>
+        <div class="field__row">
+          <input id="f-url" type="url" inputmode="url" placeholder="https://contoh.com/artikel" autocomplete="off" spellcheck="false" required>
+          <button class="btn btn--ghost btn--sm" type="button" id="paste-btn">
+            <svg class="icon" aria-hidden="true"><use href="#i-clipboard"/></svg>Tempel
+          </button>
+        </div>
+        <p class="hint" id="url-hint">Alamat akan dilengkapi <code>https://</code> otomatis bila perlu.</p>
+      </div>
+
+      <div class="field">
+        <label for="f-title">Judul</label>
+        <input id="f-title" type="text" placeholder="Judul tautan (opsional)" maxlength="140" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label for="f-desc">Catatan singkat</label>
+        <textarea id="f-desc" rows="2" maxlength="320" placeholder="Kenapa tautan ini penting?"></textarea>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label for="f-collection">Koleksi</label>
+          <input id="f-collection" type="text" list="collection-list" maxlength="40" placeholder="Inspirasi, Kerja…" autocomplete="off">
+          <datalist id="collection-list"></datalist>
+        </div>
+        <div class="field">
+          <label for="f-tags">Tag</label>
+          <input id="f-tags" type="text" placeholder="desain, tools, bacaan" autocomplete="off">
+        </div>
+      </div>
+
+      <label class="switch" for="f-fav">
+        <span class="switch__text">
+          <strong>Tandai favorit</strong>
+          <small>Muncul di tab Favorit dan diurutkan lebih dulu.</small>
+        </span>
+        <input id="f-fav" type="checkbox">
+        <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
+      </label>
+    </div>
+
+    <footer class="sheet__foot">
+      <span class="sheet__note" id="link-form-note">Data hanya tersimpan di perangkat ini.</span>
+      <div class="sheet__actions">
+        <button class="btn btn--ghost" type="button" data-close="link-modal">Batal</button>
+        <button class="btn btn--primary" type="submit" id="link-save">
+          <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Simpan tautan
+        </button>
+      </div>
+    </footer>
+  </form>
+</div>
+
+<!-- Pengaturan -->
+<div class="modal" id="settings-modal" hidden>
+  <div class="modal__backdrop" data-close="settings-modal"></div>
+  <div class="sheet sheet--settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <header class="sheet__head">
+      <div>
+        <p class="eyebrow">Preferensi</p>
+        <h2 id="settings-title">Pengaturan</h2>
+      </div>
+      <button class="icon-btn" type="button" data-close="settings-modal" aria-label="Tutup">
+        <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </header>
+
+    <div class="sheet__body">
+      <div class="setting">
+        <div class="setting__label">
+          <strong>Tema tampilan</strong>
+          <small>Glassmorphism gelap, terang, atau ikut sistem.</small>
+        </div>
+        <div class="segmented" role="group" aria-label="Pilih tema">
+          <button type="button" data-theme="auto"><svg class="icon" aria-hidden="true"><use href="#i-monitor"/></svg>Auto</button>
+          <button type="button" data-theme="dark"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg>Gelap</button>
+          <button type="button" data-theme="light"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>Terang</button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div class="setting__label">
+          <strong>Cadangan & pemulihan</strong>
+          <small>Simpan seluruh tautan ke berkas JSON, atau impor kembali.</small>
+        </div>
+        <div class="setting__actions">
+          <button class="btn btn--ghost btn--sm" type="button" id="export-btn">
+            <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Ekspor JSON
+          </button>
+          <button class="btn btn--ghost btn--sm" type="button" id="import-btn">
+            <svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>Impor
+          </button>
+          <input type="file" id="import-file" accept="application/json,.json" hidden>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div class="setting__label">
+          <strong>Data contoh</strong>
+          <small>Tambahkan beberapa tautan contoh untuk mencoba fitur.</small>
+        </div>
+        <button class="btn btn--ghost btn--sm" type="button" id="sample-btn">
+          <svg class="icon" aria-hidden="true"><use href="#i-sparkles"/></svg>Muat contoh
+        </button>
+      </div>
+
+      <div class="setting setting--danger">
+        <div class="setting__label">
+          <strong>Kosongkan vault</strong>
+          <small>Hapus semua tautan dari perangkat ini. Tidak bisa dibatalkan.</small>
+        </div>
+        <button class="btn btn--danger btn--sm" type="button" id="clear-btn">
+          <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>Hapus semua
+        </button>
+      </div>
+
+      <div class="about-card">
+        <span class="about-card__mark"><svg class="icon" aria-hidden="true"><use href="#i-logo"/></svg></span>
+        <div>
+          <strong>Alinkvault <span id="app-version">1.0.0</span></strong>
+          <p>Vault tautan pribadi bertema glassmorphism. Offline, tanpa akun, tanpa pelacakan.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="sheet__foot">
+      <span class="sheet__note">Dibuat untuk ruang kerja yang lebih rapi.</span>
+      <div class="sheet__actions">
+        <button class="btn btn--primary" type="button" data-close="settings-modal">Selesai</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- Konfirmasi -->
+<div class="modal modal--confirm" id="confirm-modal" hidden>
+  <div class="modal__backdrop" data-close="confirm-modal"></div>
+  <div class="confirm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-sub">
+    <h2 id="confirm-title">Hapus tautan?</h2>
+    <p id="confirm-sub">Tindakan ini tidak bisa dibatalkan.</p>
+    <div class="confirm__actions">
+      <button class="btn btn--ghost" type="button" id="confirm-cancel">Batal</button>
+      <button class="btn btn--danger" type="button" id="confirm-ok">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

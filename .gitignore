@@ -1,0 +1,32 @@
+# OS & editor
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+
+# Node / server lokal
+node_modules/
+.server.pid
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/src/main/assets/
+dist/
+release-output/
+*.apk
+*.aab
+
+# Materi penandatanganan — jangan pernah di-commit
+android/keystore/
+android/keystore.properties
+android/app/release.keystore
+*.jks
+*.keystore
+
+# Python
+__pycache__/
+*.pyc

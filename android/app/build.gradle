@@ -1,0 +1,74 @@
+plugins {
+    id 'com.android.application'
+}
+
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new java.util.Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new java.io.FileInputStream(keystorePropertiesFile))
+}
+
+def signingStorePath = System.getenv('ALINKVAULT_KEYSTORE_PATH') ?: keystoreProperties.getProperty('storeFile')
+def signingStorePassword = System.getenv('ALINKVAULT_KEYSTORE_PASSWORD') ?: keystoreProperties.getProperty('storePassword')
+def signingKeyAlias = System.getenv('ALINKVAULT_KEY_ALIAS') ?: keystoreProperties.getProperty('keyAlias')
+def signingKeyPassword = System.getenv('ALINKVAULT_KEY_PASSWORD') ?: keystoreProperties.getProperty('keyPassword')
+def signingStoreFile = signingStorePath ? rootProject.file(signingStorePath) : null
+def hasReleaseSigning = signingStoreFile != null && signingStoreFile.exists() &&
+    signingStorePassword && signingKeyAlias && signingKeyPassword
+
+android {
+    namespace 'com.alfiandi.alinkvault'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.alfiandi.alinkvault"
+        minSdk 24
+        targetSdk 34
+        versionCode ((System.getenv('ALINKVAULT_VERSION_CODE') ?: '1').toInteger())
+        versionName (System.getenv('ALINKVAULT_VERSION_NAME') ?: '1.0.0')
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile signingStoreFile
+                storePassword signingStorePassword
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            // Debug memakai kunci debug bawaan.
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+// Salin aset web ke dalam APK sebelum build.
+tasks.register('syncWebAssets', Copy) {
+    from("${projectDir}/../../") {
+        include 'index.html'
+        include 'manifest.webmanifest'
+        include 'sw.js'
+        include 'icon.svg'
+        include 'icon-*.png'
+        include 'assets/**'
+    }
+    into "${projectDir}/src/main/assets"
+}
+
+preBuild.dependsOn('syncWebAssets')
