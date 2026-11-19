@@ -25,6 +25,7 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -35,9 +36,12 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.json.JSONObject;
+
 public class MainActivity extends Activity {
     private static final int REQ_FILE = 4201;
     private static final int REQ_SAVE = 4202;
+    private static final int REQ_IMPORT = 4203;
     private static final String APP_ORIGIN = "appassets.androidplatform.net";
 
     private WebView webView;
@@ -256,9 +260,67 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void startImport() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
+            "application/json",
+            "text/plain",
+            "application/octet-stream"
+        });
+        try {
+            startActivityForResult(intent, REQ_IMPORT);
+        } catch (Exception e) {
+            Toast.makeText(this, "Tidak bisa membuka pemilih berkas.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void readImport(Uri uri) {
+        try (InputStream in = getContentResolver().openInputStream(uri)) {
+            if (in == null) throw new IOException("Aliran berkas kosong");
+
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            byte[] chunk = new byte[8192];
+            int read;
+            int total = 0;
+            while ((read = in.read(chunk)) != -1) {
+                total += read;
+                if (total > 8 * 1024 * 1024) throw new IOException("Berkas terlalu besar (maks. 8 MB)");
+                buffer.write(chunk, 0, read);
+            }
+
+            String text = new String(buffer.toByteArray(), StandardCharsets.UTF_8);
+            if (!text.isEmpty() && text.charAt(0) == '\uFEFF') {
+                text = text.substring(1);
+            }
+            final String payload = text;
+
+            if (webView != null) {
+                webView.post(() -> {
+                    if (webView == null) return;
+                    webView.evaluateJavascript(
+                        "window.__alinkvaultImportText && window.__alinkvaultImportText("
+                            + JSONObject.quote(payload) + ")",
+                        null
+                    );
+                });
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Gagal membaca berkas cadangan: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQ_IMPORT) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+                readImport(data.getData());
+            }
+            return;
+        }
 
         if (requestCode == REQ_FILE) {
             Uri[] results = null;
@@ -331,6 +393,11 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void downloadFile(String filename, String content, String mimeType) {
             runOnUiThread(() -> startSave(filename, content, mimeType));
+        }
+
+        @JavascriptInterface
+        public void importBackup() {
+            runOnUiThread(() -> startImport());
         }
 
         @JavascriptInterface

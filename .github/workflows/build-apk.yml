@@ -35,7 +35,7 @@ jobs:
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             echo "ALINKVAULT_VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
           else
-            echo "ALINKVAULT_VERSION_NAME=1.0.0" >> "$GITHUB_ENV"
+            echo "ALINKVAULT_VERSION_NAME=1.0.1" >> "$GITHUB_ENV"
           fi
           echo "ALINKVAULT_VERSION_CODE=${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
 
@@ -134,6 +134,7 @@ jobs:
             - 🔎 Pencarian instan, filter koleksi, dan empat mode urutan.
             - 📚 Halaman koleksi untuk merapikan tautan sesuai konteks.
             - 💾 Cadangan JSON (ekspor/impor) dan penyimpanan 100% lokal.
+            - 🩹 **Impor cadangan lebih andal:** berkas dibaca langsung lewat pemilih berkas Android, dengan pesan kesalahan yang jelas.
             - 📱 APK WebView ringan, offline-first, tanpa iklan dan tanpa akun.
 
             ### 🚀 Cara pasang

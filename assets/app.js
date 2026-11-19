@@ -3,7 +3,7 @@
   'use strict';
 
   const KEY = 'alinkvault.v1';
-  const APP_VERSION = '1.0.0';
+  const APP_VERSION = '1.0.1';
   const MAX_TAGS = 8;
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -871,47 +871,79 @@
     }
   }
 
+  function importPayload(text) {
+    const clean = String(text == null ? '' : text).replace(/^\uFEFF/, '').trim();
+
+    if (!clean) {
+      toast('Berkas cadangan kosong.', { icon: 'info' });
+      return;
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(clean);
+    } catch (err) {
+      toast('Isi berkas bukan JSON yang valid. Pastikan memilih berkas hasil ekspor Alinkvault.', { icon: 'info' });
+      return;
+    }
+
+    const rawItems = Array.isArray(parsed) ? parsed : parsed && parsed.items;
+    if (!Array.isArray(rawItems)) {
+      toast('Struktur cadangan tidak dikenali. Gunakan berkas .json hasil ekspor Alinkvault.', { icon: 'info' });
+      return;
+    }
+
+    if (!rawItems.length) {
+      toast('Berkas cadangan tidak berisi tautan.', { icon: 'info' });
+      return;
+    }
+
+    const existing = new Set(state.items.map((item) => item.url.replace(/\/$/, '')));
+    let added = 0;
+    let skipped = 0;
+
+    rawItems.forEach((raw) => {
+      const item = sanitizeItem(raw);
+      if (!item) { skipped += 1; return; }
+      const key = item.url.replace(/\/$/, '');
+      if (existing.has(key)) { skipped += 1; return; }
+      existing.add(key);
+      state.items.push(item);
+      added += 1;
+    });
+
+    if (added) {
+      save();
+      closeModal('settings-modal');
+      render();
+    }
+
+    toast(
+      added
+        ? `${added} tautan diimpor${skipped ? `, ${skipped} dilewati` : ''}.`
+        : 'Tidak ada tautan baru untuk diimpor.',
+      { icon: added ? 'upload' : 'info' },
+    );
+  }
+
   function importFile(file) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      try {
-        const parsed = JSON.parse(String(reader.result || ''));
-        const rawItems = Array.isArray(parsed) ? parsed : parsed.items;
-        if (!Array.isArray(rawItems)) throw new Error('format');
-        const existing = new Set(state.items.map((item) => item.url.replace(/\/$/, '')));
-        let added = 0;
-        let skipped = 0;
-        rawItems.forEach((raw) => {
-          const item = sanitizeItem(raw);
-          if (!item) { skipped += 1; return; }
-          const key = item.url.replace(/\/$/, '');
-          if (existing.has(key)) { skipped += 1; return; }
-          existing.add(key);
-          state.items.push(item);
-          added += 1;
-        });
-        if (added) {
-          save();
-          render();
-        }
-        toast(
-          added
-            ? `${added} tautan diimpor${skipped ? `, ${skipped} dilewati` : ''}.`
-            : 'Tidak ada tautan baru untuk diimpor.',
-          { icon: added ? 'upload' : 'info' },
-        );
-      } catch (err) {
-        toast('Berkas cadangan tidak dikenali.', { icon: 'info' });
-      }
+      importPayload(reader.result);
       $('#import-file').value = '';
     };
     reader.onerror = () => {
-      toast('Gagal membaca berkas.', { icon: 'info' });
+      toast('Gagal membaca berkas. Coba impor ulang lewat aplikasi Android.', { icon: 'info' });
       $('#import-file').value = '';
     };
     reader.readAsText(file);
   }
+
+  // Dipanggil dari MainActivity setelah berkas cadangan dibaca native.
+  window.__alinkvaultImportText = function alinkvaultImportText(text) {
+    importPayload(text);
+  };
 
   /* ---------- Data contoh ---------- */
 
@@ -1015,7 +1047,16 @@
     $('#sample-btn').addEventListener('click', () => seedSamples());
     $('#clear-btn').addEventListener('click', () => clearAll());
     $('#export-btn').addEventListener('click', () => exportData());
-    $('#import-btn').addEventListener('click', () => $('#import-file').click());
+    $('#import-btn').addEventListener('click', () => {
+      const native = bridge();
+      if (native && typeof native.importBackup === 'function') {
+        try {
+          native.importBackup();
+          return;
+        } catch (err) { /* jatuh ke input berkas biasa */ }
+      }
+      $('#import-file').click();
+    });
     $('#import-file').addEventListener('change', (event) => importFile(event.target.files[0]));
 
     $('#link-form').addEventListener('submit', submitEditor);
