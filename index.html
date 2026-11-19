@@ -17,14 +17,17 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="stylesheet" href="assets/styles.css">
 <script>
-  // Terapkan tema sebelum render agar tidak berkedip.
+  // Terapkan tema & mode ringan sebelum render agar tidak berkedip.
   try {
     var raw = localStorage.getItem('alinkvault.v1');
-    var theme = raw ? (JSON.parse(raw).settings || {}).theme : 'auto';
-    theme = theme || 'auto';
+    var settings = raw ? (JSON.parse(raw).settings || {}) : {};
+    var theme = settings.theme || 'auto';
     var dark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-  } catch (e) { document.documentElement.dataset.theme = 'dark'; }
+    document.documentElement.dataset.fx = settings.lite ? 'lite' : 'full';
+  } catch (e) {
+    document.documentElement.dataset.theme = 'dark';
+  }
 </script>
 </head>
 <body>
@@ -297,6 +300,18 @@
 
       <div class="setting">
         <div class="setting__label">
+          <strong>Mode ringan</strong>
+          <small>Matikan animasi latar dan efek blur agar aplikasi lebih lancar di perangkat kelas bawah.</small>
+        </div>
+        <label class="switch switch--compact" for="fx-lite">
+          <span class="sr-only">Aktifkan mode ringan</span>
+          <input id="fx-lite" type="checkbox">
+          <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
+        </label>
+      </div>
+
+      <div class="setting">
+        <div class="setting__label">
           <strong>Cadangan & pemulihan</strong>
           <small>Simpan seluruh tautan ke berkas JSON, atau impor kembali.</small>
         </div>
@@ -334,7 +349,7 @@
       <div class="about-card">
         <span class="about-card__mark"><svg class="icon" aria-hidden="true"><use href="#i-logo"/></svg></span>
         <div>
-          <strong>Alinkvault <span id="app-version">1.0.0</span></strong>
+          <strong>Alinkvault <span id="app-version">1.0.2</span></strong>
           <p>Vault tautan pribadi bertema glassmorphism. Offline, tanpa akun, tanpa pelacakan.</p>
         </div>
       </div>

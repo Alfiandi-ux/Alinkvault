@@ -3,7 +3,7 @@
   'use strict';
 
   const KEY = 'alinkvault.v1';
-  const APP_VERSION = '1.0.1';
+  const APP_VERSION = '1.0.2';
   const MAX_TAGS = 8;
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -13,7 +13,7 @@
 
   const state = {
     items: [],
-    settings: { theme: 'auto' },
+    settings: { theme: 'auto', lite: false },
     view: 'all',
     collection: null,
     query: '',
@@ -162,6 +162,7 @@
       if (data.settings && typeof data.settings === 'object') {
         const theme = data.settings.theme;
         state.settings.theme = ['auto', 'dark', 'light'].includes(theme) ? theme : 'auto';
+        state.settings.lite = Boolean(data.settings.lite);
       }
     } catch (err) {
       console.warn('Gagal membaca vault:', err);
@@ -209,6 +210,16 @@
     if (native && typeof native.setTheme === 'function') {
       try { native.setTheme(resolved); } catch (err) { /* abaikan */ }
     }
+    if (persist) save();
+  }
+
+  /* ---------- Mode ringan ---------- */
+
+  function applyFx(lite, { persist = true } = {}) {
+    state.settings.lite = Boolean(lite);
+    document.documentElement.dataset.fx = state.settings.lite ? 'lite' : 'full';
+    const toggle = $('#fx-lite');
+    if (toggle) toggle.checked = state.settings.lite;
     if (persist) save();
   }
 
@@ -439,18 +450,61 @@
       .join('');
   }
 
-  function render() {
-    const activeView = state.collection ? 'collections' : state.view;
-    $$('.nav__item, .tab').forEach((el) => {
-      const active = el.dataset.view === activeView;
-      el.classList.toggle('is-active', active);
-      if (active) el.setAttribute('aria-current', 'page');
-      else el.removeAttribute('aria-current');
-    });
+  /* ---------- Render daftar ---------- */
 
-    renderStats();
-    renderChips();
-    renderRailCollections();
+  const cardCache = new Map();
+  let searchTimer = null;
+
+  function cardSignature(item) {
+    return [
+      item.url,
+      item.title,
+      item.description,
+      item.collection,
+      item.tags.join(','),
+      item.fav ? 1 : 0,
+      item.updatedAt,
+      state.justAddedId === item.id ? 1 : 0,
+    ].join('\u0000');
+  }
+
+  function cardElement(item) {
+    const signature = cardSignature(item);
+    const cached = cardCache.get(item.id);
+    if (cached && cached.signature === signature) return cached.element;
+
+    const template = document.createElement('template');
+    template.innerHTML = cardHtml(item).trim();
+    const element = template.content.firstElementChild;
+    cardCache.set(item.id, { signature, element });
+    return element;
+  }
+
+  // Pakai ulang elemen kartu yang sudah ada supaya gambar favicon tidak dimuat ulang.
+  function paintGrid(items) {
+    const grid = $('#grid');
+    const fragment = document.createDocumentFragment();
+    items.forEach((item) => fragment.appendChild(cardElement(item)));
+    grid.replaceChildren(fragment);
+  }
+
+  function render({ listOnly = false } = {}) {
+    const showCollections = state.view === 'collections' && !state.collection;
+    if (listOnly && showCollections) return;
+
+    if (!listOnly) {
+      const activeView = state.collection ? 'collections' : state.view;
+      $$('.nav__item, .tab').forEach((el) => {
+        const active = el.dataset.view === activeView;
+        el.classList.toggle('is-active', active);
+        if (active) el.setAttribute('aria-current', 'page');
+        else el.removeAttribute('aria-current');
+      });
+
+      renderStats();
+      renderChips();
+      renderRailCollections();
+    }
 
     const titles = {
       all: ['Ruang kerja', 'Semua tautan', 'Semua tautan yang kamu simpan, rapi di satu tempat.'],
@@ -472,15 +526,17 @@
       sub = `Hasil pencarian untuk “${state.query.trim()}”.`;
     }
 
-    $('#view-title').textContent = title;
-    $('#view-sub').textContent = sub;
-    $('#view-eyebrow').textContent = eyebrow;
+    const titleEl = $('#view-title');
+    const subEl = $('#view-sub');
+    const eyebrowEl = $('#view-eyebrow');
+    if (titleEl.textContent !== title) titleEl.textContent = title;
+    if (subEl.textContent !== sub) subEl.textContent = sub;
+    if (eyebrowEl.textContent !== eyebrow) eyebrowEl.textContent = eyebrow;
 
     const grid = $('#grid');
     const collectionsView = $('#collections-view');
     const empty = $('#empty');
     const toolbar = $('#toolbar');
-    const showCollections = state.view === 'collections' && !state.collection;
 
     toolbar.hidden = showCollections;
     collectionsView.hidden = !showCollections;
@@ -488,7 +544,7 @@
 
     if (showCollections) {
       const html = collectionsHtml();
-      collectionsView.innerHTML = html;
+      if (collectionsView.innerHTML !== html) collectionsView.innerHTML = html;
       if (!html) {
         empty.hidden = false;
         empty.querySelector('#empty-title').textContent = 'Belum ada koleksi';
@@ -504,7 +560,7 @@
     }
 
     const items = visibleItems();
-    grid.innerHTML = items.map(cardHtml).join('');
+    paintGrid(items);
     grid.hidden = items.length === 0;
     empty.hidden = items.length > 0;
 
@@ -540,15 +596,23 @@
       }, 600);
     }
 
-    updateMeta();
+    if (!listOnly) updateMeta();
   }
 
+  let metaSignature = null;
+
   function updateMeta() {
+    const names = collectionsList().map((col) => col.name);
+    const signature = names.join('\u0000');
+    if (signature === metaSignature) return;
+    metaSignature = signature;
+
     $$('#collection-list option').forEach((option) => option.remove());
-    collectionsList().forEach((col) => {
+    const list = $('#collection-list');
+    names.forEach((name) => {
       const option = document.createElement('option');
-      option.value = col.name;
-      $('#collection-list').appendChild(option);
+      option.value = name;
+      list.appendChild(option);
     });
   }
 
@@ -738,6 +802,7 @@
       confirmLabel: 'Hapus',
       onConfirm: () => {
         state.items.splice(index, 1);
+        cardCache.delete(item.id);
         state.lastDeleted = { item, index };
         save();
         render();
@@ -1005,6 +1070,7 @@
     state.items = samples.map((sample) =>
       sanitizeItem({ ...sample, updatedAt: sample.createdAt }),
     );
+    cardCache.clear();
     closeModal('settings-modal');
     save();
     setView('all');
@@ -1019,6 +1085,8 @@
       confirmLabel: 'Ya, hapus semua',
       onConfirm: () => {
         state.items = [];
+        cardCache.clear();
+        metaSignature = null;
         state.collection = null;
         save();
         closeModal('settings-modal');
@@ -1070,18 +1138,20 @@
     $('#search').addEventListener('input', (event) => {
       state.query = event.target.value;
       $('#search-clear').hidden = !state.query;
-      render();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => render({ listOnly: true }), 80);
     });
     $('#search-clear').addEventListener('click', () => {
+      clearTimeout(searchTimer);
       state.query = '';
       $('#search').value = '';
       $('#search-clear').hidden = true;
-      render();
+      render({ listOnly: true });
       $('#search').focus();
     });
     $('#sort').addEventListener('change', (event) => {
       state.sort = event.target.value;
-      render();
+      render({ listOnly: true });
     });
 
     $('#theme-toggle').addEventListener('click', () => {
@@ -1090,6 +1160,16 @@
 
     $$('.segmented button').forEach((btn) => {
       btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+    });
+
+    $('#fx-lite').addEventListener('change', (event) => {
+      applyFx(event.target.checked);
+      toast(
+        event.target.checked
+          ? 'Mode ringan aktif. Animasi latar dimatikan.'
+          : 'Mode ringan nonaktif. Efek kaca penuh aktif kembali.',
+        { icon: event.target.checked ? 'sparkles' : 'info' },
+      );
     });
 
     $('#rail-settings').addEventListener('click', () => openModal('settings-modal'));
@@ -1225,6 +1305,7 @@
   function init() {
     load();
     applyTheme(state.settings.theme, { persist: false });
+    applyFx(state.settings.lite, { persist: false });
     routeFromHash();
     bindEvents();
     render();

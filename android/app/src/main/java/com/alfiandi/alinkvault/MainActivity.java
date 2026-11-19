@@ -115,9 +115,14 @@ public class MainActivity extends Activity {
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
         settings.setSupportMultipleWindows(false);
         settings.setUserAgentString(settings.getUserAgentString() + " Alinkvault/1.0");
+        // Render di luar layar & layer hardware: gulir lebih hemat di WebView.
+        settings.setOffscreenPreRaster(true);
 
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
         webView.setBackgroundColor(Color.parseColor("#070A16"));
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override

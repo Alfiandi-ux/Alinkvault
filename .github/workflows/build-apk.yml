@@ -35,7 +35,7 @@ jobs:
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             echo "ALINKVAULT_VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
           else
-            echo "ALINKVAULT_VERSION_NAME=1.0.1" >> "$GITHUB_ENV"
+            echo "ALINKVAULT_VERSION_NAME=1.0.2" >> "$GITHUB_ENV"
           fi
           echo "ALINKVAULT_VERSION_CODE=${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
 
@@ -104,6 +104,8 @@ jobs:
 
             Vault tautan pribadi bertema **glassmorphism**. Offline, tanpa akun, tanpa server.
 
+            Build terbaru memakai animasi dan blur yang lebih hemat GPU serta **Mode ringan** di Pengaturan.
+
             ### ⬇️ Download APK
             - **[Alinkvault.apk](https://github.com/${{ github.repository }}/releases/download/latest-build/Alinkvault.apk)**
 
@@ -129,6 +131,7 @@ jobs:
             - **[Alinkvault.apk](https://github.com/${{ github.repository }}/releases/latest/download/Alinkvault.apk)**
 
             ### ✨ Fitur
+            - ⚡ **Lebih lancar:** animasi latar dan blur yang berat dikurangi, kartu dipakai ulang saat mencari, plus **Mode ringan** untuk perangkat kelas bawah.
             - 🧊 Antarmuka kaca (glassmorphism) dengan aurora lembut, tema gelap/terang/auto.
             - 🔗 Simpan judul, catatan, koleksi, tag, dan favorit untuk setiap tautan.
             - 🔎 Pencarian instan, filter koleksi, dan empat mode urutan.

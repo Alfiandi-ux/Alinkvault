@@ -1,6 +1,6 @@
 /* Alinkvault — service worker (offline-first) */
 
-const CACHE = 'alinkvault-v1.0.1';
+const CACHE = 'alinkvault-v1.0.2';
 const ASSETS = [
   './',
   './index.html',
